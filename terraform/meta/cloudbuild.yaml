@@ -1,0 +1,63 @@
+steps:
+#    - id: setup
+#      name: 'busybox:1.28'
+#      volumes:
+#        - name: srcVol
+#          path: /source
+#      entrypoint: "sh"
+#      args: [ "-c", "cd /source && cp -r /workspace/* /source/ && ls" ]
+
+#    - id: liquibase
+#      name: docker/compose:1.19.0
+#      volumes:
+#        - name: "srcVol"
+#          path: "/source"
+#      args:
+#        ['up', '--exit-code-from', 'liquibase']
+
+    - name: 'adoptopenjdk/maven-openjdk11'
+      id: Build
+      entrypoint: /bin/sh
+      args:
+        - -c
+        - 'mvn clean package'
+
+    - name: 'gcr.io/cloud-builders/docker'
+      id: Dockerize
+      args:
+        - 'build'
+        - '-t'
+        - 'gcr.io/$_PROJECT/$_APP_NAME:latest'
+        - '.'
+
+    - name: 'gcr.io/cloud-builders/docker'
+      id: Push
+      args:
+        - 'push'
+        - 'gcr.io/$_PROJECT/$_APP_NAME:latest'
+
+    - name: 'gcr.io/$_PROJECT/$_DEPLOYER_IMAGE_NAME'
+      id: Deploy
+      env:
+        - CLOUDSDK_COMPUTE_REGION=$_REGION
+        - CLOUDSDK_CONTAINER_CLUSTER=$_GKE_CLUSTER_NAME
+        - DB_ACCESS_SA=$_DB_ACCESS_SA
+        - APP_NAME=$_APP_NAME
+        - DB_INSTANCE=$_DB_INSTANCE
+        - PROJECT=$_PROJECT
+        - STATIC_IP=$_STATIC_IP
+      args:
+        [ 'k8s/Deployment.yaml' ]
+
+options:
+  env:
+    - PROJECT=$_PROJECT
+    - REGION=$_REGION
+    - ZONE=$_ZONE
+    - DB_ACCESS_SA=$_DB_ACCESS_SA
+    - APP_NAME=$_APP_NAME
+    - DB_INSTANCE=$_DB_INSTANCE
+    - GKE_CLUSTER_NAME=$_GKE_CLUSTER_NAME
+    - REPO_NAME=$_REPO_NAME
+    - DEPLOYER_IMAGE_NAME=$_DEPLOYER_IMAGE_NAME
+    - TF_VAR_ENV=[project_id="${_PROJECT}", project_region="${_REGION}", project_zone="${_ZONE}", db_access_sa_name="${_DB_ACCESS_SA}", gke-cluster-name="${_GKE_CLUSTER_NAME}", source-repository-name="${_REPO_NAME}", app-name="${_APP_NAME}", cloud-build-name="${_APP_NAME}-ci-cd", cloud-sql-instance-name="${_DB_INSTANCE}", deployer-image-name="${_DEPLOYER_IMAGE_NAME}"]

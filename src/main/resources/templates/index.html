@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head th:replace="header-fragment.html :: header"></head>
+
+<div class="center">
+    <a href="/add-customer"><input type="button" value="New Customer"></a>
+    <table class="center">
+        <tr>
+            <td>Company Name</td>
+            <td>Owner</td>
+            <td></td>
+        </tr>
+        <tr th:each="customer: ${customers}">
+            <td th:text="${customer.companyName}"/>
+            <td th:text="${customer.owner}"/>
+            <td><a th:href="@{/delete-customer?id=} + ${customer.id}">delete</a></td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>

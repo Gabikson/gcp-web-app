@@ -1,0 +1,28 @@
+version: "3.3"
+services:
+  sql-auth-proxy:
+    image: gcr.io/cloudsql-docker/gce-proxy:1.17
+    environment:
+      PROJECT: home-312812
+      REGION: europe-west2
+      DB_INSTANCE: cloud-x-demo-instance3
+    volumes:
+      - .:/secrets
+    command:
+      - "/cloud_sql_proxy"
+      - "-ip_address_types=PRIVATE"
+      - "-instances=${PROJECT}:${REGION}:${DB_INSTANCE}=tcp:5432"
+      - "-credential_file=/secrets/db_sa_credentials_key.json"
+
+  liquibase:
+    links:
+      - sql-auth-proxy
+    depends_on:
+      - sql-auth-proxy
+    image: adoptopenjdk/maven-openjdk11
+    volumes:
+      - .:/src
+    entrypoint: /bin/sh
+    command:
+       - "-c"
+       - 'cd src && mvn liquibase:update -Dliquibase.url=jdbc:postgresql://sql-auth-proxy:5432/cloud-x-demo -Dliquibase.username=postgres -Dliquibase.password=postgres'

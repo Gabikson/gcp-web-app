@@ -1,0 +1,87 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${APP_NAME}
+  labels:
+    app: ${APP_NAME}
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 3
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: ${APP_NAME}
+  template:
+    metadata:
+      labels:
+        app: ${APP_NAME}
+    spec:
+      volumes:
+        - name: ${DB_ACCESS_SA}-volume
+          secret:
+            secretName: ${DB_ACCESS_SA}-secret
+      containers:
+         - name: ${APP_NAME}
+           image: gcr.io/${PROJECT}/${APP_NAME}:latest
+           env:
+             - name: DB_NAME
+               valueFrom:
+                 secretKeyRef:
+                   name: db-creds-secret
+                   key: dbname
+             - name: DB_USER
+               valueFrom:
+                 secretKeyRef:
+                   name: db-creds-secret
+                   key: username
+             - name: DB_PASSWORD
+               valueFrom:
+                 secretKeyRef:
+                   name: db-creds-secret
+                   key: password
+           ports:      
+             - containerPort: 8080
+           readinessProbe:
+             initialDelaySeconds: 30
+             periodSeconds: 30
+             failureThreshold: 3
+             httpGet:
+               path: /
+               port: 8080
+               scheme: HTTP
+         - name: cloud-sql-proxy
+           image: gcr.io/cloudsql-docker/gce-proxy:1.17
+           env:
+             - name: PROJECT
+               value: ${PROJECT}
+             - name: REGION
+               value: ${REGION}
+             - name: DB_INSTANCE
+               value: ${DB_INSTANCE}
+           command:
+              - "/cloud_sql_proxy"
+              - "-ip_address_types=PRIVATE"
+              - "-instances=${PROJECT}:${REGION}:${DB_INSTANCE}=tcp:5432"
+              - "-credential_file=/secrets/credentials.json"
+           volumeMounts:
+              - name: ${DB_ACCESS_SA}-volume
+                mountPath: /secrets/
+                readOnly: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${APP_NAME}-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: $APP_NAME
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  loadBalancerIP: ${STATIC_IP}

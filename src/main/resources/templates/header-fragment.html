@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+
+<div th:fragment="header">
+    <style type="text/css">
+        body {
+            background-image: url('/bg.jpg');
+            background-size: cover;
+            text-align: center;
+        }
+        .center {
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td, th {
+            border: 1px solid #717171;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #a5a5a5;
+        }
+        a:link { text-decoration: none; }
+        a:visited { text-decoration: none; }
+        a:hover { text-decoration: none; }
+        a:active { text-decoration: none; }
+    </style>
+
+    <head>
+        <meta charset="UTF-8">
+        <title>CloudX Demo Project</title>
+    </head>
+
+    <h1 style="text-align: center">
+        <a href="/">
+        <span style="color: #4400ff; font-weight: bold">CloudX Associate</span><span style="color: #88ff88"> - Demo Project</span>
+        </a>
+        <hr>
+    </h1>
+</div>
